@@ -11,7 +11,7 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { z } from "zod";
 
 Dotenv.config();
-const port = 3000;
+const port = process.env.PORT || 3000;
 const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -139,5 +139,5 @@ app.post('/api/generate-qr', async (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`Server is running on local port http://localhost:${port}`);
+    console.log(`Server is running on port ${port}`);
 });
