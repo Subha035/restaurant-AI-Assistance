@@ -309,9 +309,16 @@ checkoutForm.addEventListener('submit', async (event) => {
     setProcessingState(true);
     setQrLoading(true);
 
+    // Show pending state in modal heading
+    const modalHeading = orderModal.querySelector('h2');
+    if (modalHeading) {
+        modalHeading.textContent = '⏳ Order Pending';
+        modalHeading.style.color = 'var(--accent-gold, #f0a500)';
+    }
+
     successMessage.innerHTML = `
         <div class="success-box">
-            <strong>Order confirmed!</strong>
+            <strong>Order pending...</strong>
             <p>Thank you, ${name}. Your order total is ${total}.</p>
             <p>Payment method: ${paymentMethod.toUpperCase()}</p>
             <p>Your QR code is being generated. Please wait a moment.</p>
@@ -338,6 +345,13 @@ checkoutForm.addEventListener('submit', async (event) => {
     } finally {
         qrCode.innerHTML = `<img src="${qrUrl}" alt="Order QR Code" />`;
         setQrLoading(false);
+    }
+
+    // Update modal heading to confirmed now that QR is ready
+    const modalHeadingFinal = orderModal.querySelector('h2');
+    if (modalHeadingFinal) {
+        modalHeadingFinal.textContent = '✓ Order Confirmed';
+        modalHeadingFinal.style.color = 'var(--accent-success, #2ecc71)';
     }
 
     successMessage.innerHTML = `
