@@ -70,7 +70,7 @@ const executor = await AgentExecutor.fromAgentAndTools({
     agent,
     tools: [getMenuTool],
     verbose: true,
-    maxIterations: 1,
+    maxIterations: 3,
     returnIntermediateSteps: true
 });
 
@@ -86,19 +86,21 @@ app.post('/api/chat', async (req, res) => {
         const response = await executor.invoke({ input: userInput });
         console.log("Agent full Response : ", response);
         
-        // FIX: Safely extract intermediate steps to avoid crashing on normal chit-chat phrases (e.g., "Hello")
-        const data = response.intermediateSteps && response.intermediateSteps.length > 0
+        const DEFAULT_REPLY = "I'm here to assist with your dining experience. How may I help you?";
+
+        // Extract tool observation if a tool was called
+        const toolObservation = response.intermediateSteps && response.intermediateSteps.length > 0
             ? response.intermediateSteps[0].observation
             : null;
 
-        if (response.output && response.output !== 'Agent stopped due to max iterations.') {
-            return res.json({ output: response.output });
-        } else if (data !== null) {
-            return res.json({ output: data });
-        }
-        
-        // Fallback for general conversational responses when no tool is invoked
-        res.json({ output: response.output || "I'm here to assist with your dining experience. How may I help you?" });
+        // Determine the best reply: prefer agent output, fall back to tool observation, then default
+        const agentOutput = response.output && response.output.trim() && response.output !== 'Agent stopped due to max iterations.'
+            ? response.output.trim()
+            : null;
+
+        const reply = agentOutput || toolObservation || DEFAULT_REPLY;
+
+        return res.json({ output: reply });
     } catch (err) {
         console.log("Error during agent execution: ", err);
         res.status(500).json({ output: "Sorry, Something went wrong. Please try again." });
