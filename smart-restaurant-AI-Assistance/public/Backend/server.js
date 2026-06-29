@@ -1,6 +1,7 @@
 import express from "express";
 import Dotenv from "dotenv";
 import path from "path";
+import { fileURLToPath } from "url";
 import fs from "fs/promises";
 
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
@@ -13,8 +14,14 @@ Dotenv.config();
 const port = 3000;
 const app = express();
 
-const _dirname = path.resolve();
-app.use(express.static(path.join(_dirname, "public")));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, "../..");
+const publicDir = path.join(projectRoot, "public", "Frontend");
+const assetDir = path.join(projectRoot, "public", "asset");
+
+app.use(express.static(publicDir));
+app.use('/asset', express.static(assetDir));
 app.use(express.json());
 
 const model = new ChatGoogleGenerativeAI({
@@ -68,7 +75,7 @@ const executor = await AgentExecutor.fromAgentAndTools({
 });
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(_dirname, 'public', 'index.html'));
+    res.sendFile(path.join(publicDir, 'index.html'));
 });
 
 app.post('/api/chat', async (req, res) => {
@@ -111,7 +118,7 @@ app.post('/api/generate-qr', async (req, res) => {
             .replace(/[^a-z0-9]+/g, '_')
             .replace(/^_+|_+$/g, '') || 'customer';
         const filename = `${safeName}_${orderId}_${sequence}.png`;
-        const qrFolder = path.join(_dirname, 'public', 'qrcodes');
+        const qrFolder = path.join(assetDir, 'qrcode');
         await fs.mkdir(qrFolder, { recursive: true });
 
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(orderData)}`;
@@ -124,7 +131,7 @@ app.post('/api/generate-qr', async (req, res) => {
         const filePath = path.join(qrFolder, filename);
         await fs.writeFile(filePath, imageBuffer);
 
-        res.json({ filename, url: `/qrcodes/${filename}` });
+        res.json({ filename, url: `/asset/qrcode/${filename}` });
     } catch (error) {
         console.error('Error generating QR:', error);
         res.status(500).json({ error: 'Failed to generate QR code.' });
